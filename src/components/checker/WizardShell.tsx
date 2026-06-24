@@ -45,11 +45,6 @@ export function WizardShell() {
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [trackerSchoolId, setTrackerSchoolId] = useState("");
 
-  const completedDeCredits = useMemo(
-    () => profile.courses.reduce((sum, course) => sum + course.credits, 0),
-    [profile.courses],
-  );
-
   const step = profile.wizardStep;
 
   const setStep = (nextStep: WizardStep) => {
@@ -462,7 +457,6 @@ export function WizardShell() {
                 currentGpa={profile.currentGpa}
                 hsCredits={profile.hsCredits}
                 semesterCollegeCredits={profile.semesterCollegeCredits}
-                completedDeCredits={completedDeCredits}
                 onChange={(values) =>
                   setProfile((previous) => ({ ...previous, ...values }))
                 }

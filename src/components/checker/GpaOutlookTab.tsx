@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { TrendingUp } from "lucide-react";
 import {
   HS_CREDITS_PER_YEAR_HINT,
+  HS_WEIGHTED_GPA_MAX,
   predictSemesterGpaAllAs,
 } from "@/lib/gpaOutlook";
 
@@ -11,7 +12,6 @@ interface GpaOutlookTabProps {
   currentGpa?: number;
   hsCredits?: number;
   semesterCollegeCredits?: number;
-  completedDeCredits: number;
   onChange: (values: {
     currentGpa?: number;
     hsCredits?: number;
@@ -32,7 +32,6 @@ export function GpaOutlookTab({
   currentGpa,
   hsCredits,
   semesterCollegeCredits,
-  completedDeCredits,
   onChange,
 }: GpaOutlookTabProps) {
   const result = useMemo(() => {
@@ -49,9 +48,8 @@ export function GpaOutlookTab({
       currentGpa,
       hsCredits,
       semesterCollegeCredits,
-      completedDeCredits,
     });
-  }, [completedDeCredits, currentGpa, hsCredits, semesterCollegeCredits]);
+  }, [currentGpa, hsCredits, semesterCollegeCredits]);
 
   const changeLabel =
     result && result.gpaChange > 0
@@ -77,28 +75,32 @@ export function GpaOutlookTab({
           Semester GPA Forecast
         </h2>
         <p className="mt-2 text-sm text-[#4a4a4a]">
-          See how your cumulative GPA could shift if you earn all A&apos;s on
-          the college credits you take this semester.
+          See how your weighted high school cumulative GPA could shift if you
+          earn all A&apos;s on the college credits you take this semester.
         </p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
         <label className="block">
           <span className="text-[10px] font-black uppercase tracking-widest text-[#1a1a2e]">
-            Current GPA
+            Current HS GPA
           </span>
           <input
             type="number"
             min={0}
-            max={4}
+            max={HS_WEIGHTED_GPA_MAX}
             step={0.01}
             value={currentGpa ?? ""}
             onChange={(event) =>
               onChange({ currentGpa: parseOptionalNumber(event.target.value) })
             }
-            placeholder="e.g. 3.75"
+            placeholder="e.g. 4.25"
             className="mt-1 w-full border-4 border-black bg-[#f5f0e8] px-3 py-2 text-sm font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:border-[#10b981] focus:outline-none"
           />
+          <p className="mt-1 text-[10px] leading-relaxed text-[#4a4a4a]">
+            Weighted GPA can go above 4.0 if you take AP or dual enrollment
+            classes.
+          </p>
         </label>
 
         <label className="block">
@@ -117,9 +119,10 @@ export function GpaOutlookTab({
             className="mt-1 w-full border-4 border-black bg-[#f5f0e8] px-3 py-2 text-sm font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:border-[#10b981] focus:outline-none"
           />
           <p className="mt-1 text-[10px] leading-relaxed text-[#4a4a4a]">
-            Not sure? Most students earn about{" "}
-            <strong>{HS_CREDITS_PER_YEAR_HINT} credits per year</strong> (7 ×
-            freshman + 7 × sophomore + 7 × junior = 21 total).
+            Credits already on your HS transcript before this semester (include
+            finished DE if they&apos;re on your transcript). Not sure? About{" "}
+            <strong>{HS_CREDITS_PER_YEAR_HINT} per year</strong> (≈21 through
+            junior year).
           </p>
         </label>
 
@@ -141,24 +144,17 @@ export function GpaOutlookTab({
             className="mt-1 w-full border-4 border-black bg-[#f5f0e8] px-3 py-2 text-sm font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:border-[#10b981] focus:outline-none"
           />
           <p className="mt-1 text-[10px] leading-relaxed text-[#4a4a4a]">
-            Dual enrollment + any other college courses you&apos;re taking now.
+            Only the college credits you&apos;re taking right now — not your
+            whole DETT roadmap.
           </p>
         </label>
       </div>
-
-      {completedDeCredits > 0 ? (
-        <p className="mt-4 text-xs text-[#4a4a4a]">
-          Your DETT roadmap includes{" "}
-          <strong className="dett-live-value">{completedDeCredits}</strong> DE
-          credits already counted toward your prior credit total.
-        </p>
-      ) : null}
 
       {result ? (
         <div className="mt-6 grid gap-4 sm:grid-cols-3">
           <div className="border-4 border-black bg-[#f4f1ea] px-4 py-4 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
             <p className="text-[10px] font-black uppercase tracking-widest text-[#4a4a4a]">
-              Projected GPA (all A&apos;s)
+              Projected HS GPA (all A&apos;s)
             </p>
             <p className="dett-live-value mt-2 text-3xl font-black">
               {result.projectedGpa.toFixed(3)}
@@ -184,8 +180,7 @@ export function GpaOutlookTab({
               {result.newTotalCredits}
             </p>
             <p className="mt-1 text-[10px] text-[#4a4a4a]">
-              {result.totalPreviousCredits} prior + {semesterCollegeCredits}{" "}
-              this term
+              {hsCredits} HS credits + {semesterCollegeCredits} this semester
             </p>
           </div>
         </div>
@@ -195,8 +190,8 @@ export function GpaOutlookTab({
             Enter your numbers above
           </p>
           <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-[#4a4a4a]">
-            We&apos;ll calculate your projected cumulative GPA if every college
-            credit this semester earns a 4.0.
+            We&apos;ll calculate your projected weighted HS GPA if every college
+            credit this semester earns an A (5.0 on most weighted scales).
           </p>
         </div>
       )}

@@ -198,6 +198,8 @@ export async function POST(request: Request) {
         return Response.json({
           answer: generateLocalFollowUpAnswer(followUpPayload),
           source: "local",
+          notice:
+            "Smart Demo Mode — add OPENAI_API_KEY to .env.local for conversational follow-ups.",
         });
       }
 

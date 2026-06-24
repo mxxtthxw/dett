@@ -366,10 +366,17 @@ export function generateLocalFollowUpAnswer(
   const name = payload.displayName.trim() || "there";
   const question = payload.question.toLowerCase();
   const snapshot = payload.profileSnapshot;
-  const priorTopics = payload.history
+  const priorAssistantReplies = payload.history
     .filter((entry) => entry.role === "assistant")
-    .join(" ")
-    .toLowerCase();
+    .map((entry) => entry.content.toLowerCase());
+
+  const isRepeat = (answer: string) =>
+    priorAssistantReplies.some(
+      (previous) =>
+        previous === answer.toLowerCase() ||
+        (previous.length > 40 &&
+          answer.toLowerCase().includes(previous.slice(0, 40))),
+    );
 
   const findCourseMention = () => {
     for (const outcome of snapshot.courseOutcomes) {
@@ -402,8 +409,8 @@ export function generateLocalFollowUpAnswer(
   }
 
   if (question.includes("gpa") || question.includes("grade")) {
-    if (priorTopics.includes("gpa outlook")) {
-      return `Plug your numbers into the **GPA Outlook** tab — it updates instantly. The biggest lever is how many college credits you take this term and the grades you earn on them.`;
+    if (priorAssistantReplies.some((reply) => reply.includes("gpa outlook"))) {
+      return `For GPA, the **GPA Outlook** tab is the fastest check — update your credit count or grades there and the projection recalculates immediately.`;
     }
     return `${name}, open the **GPA Outlook** tab next to this advisor. Enter your current GPA, high school credits (~7 per year if unsure), and college credits this semester to see your projected GPA if you earn all A's.`;
   }
@@ -457,5 +464,11 @@ export function generateLocalFollowUpAnswer(
         )
       : 0;
 
-  return `${name}, at ${snapshot.focusSchoolName} you're at **${snapshot.acceptedCredits}/${snapshot.attemptedCredits}** accepted credits (${acceptancePct}%). Ask about a specific course code or requirement area and I can dig in — e.g. "Will CHEM 1211 count?"`;
+  const fallback = `On "${payload.question.trim()}" — without live AI I can only match keywords. At ${snapshot.focusSchoolName} you have **${snapshot.acceptedCredits}/${snapshot.attemptedCredits}** credits accepted (${acceptancePct}%). Name a course code from your list (${snapshot.courseCodes.slice(0, 4).join(", ")}${snapshot.courseCodes.length > 4 ? ", …" : ""}) for a specific answer, or add \`OPENAI_API_KEY\` to \`.env.local\` for real chat.`;
+
+  if (isRepeat(fallback) && snapshot.courseCodes.length > 0) {
+    return `Try asking about one of your courses directly — e.g. "Does ${snapshot.courseCodes[0]} transfer as direct credit?" — and I'll pull the exact mapping from your report.`;
+  }
+
+  return fallback;
 }

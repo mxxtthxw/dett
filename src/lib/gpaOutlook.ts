@@ -2,7 +2,6 @@ export interface GpaOutlookInput {
   currentGpa: number;
   hsCredits: number;
   semesterCollegeCredits: number;
-  completedDeCredits?: number;
 }
 
 export interface GpaOutlookResult {
@@ -14,22 +13,25 @@ export interface GpaOutlookResult {
   assumption: string;
 }
 
-const ALL_A_GRADE_POINTS = 4.0;
+/** Typical weighted A for dual enrollment / AP on a high school transcript. */
+const WEIGHTED_A_GRADE_POINTS = 5.0;
+
+/** Sanity cap for weighted HS GPA inputs (many districts top out around 5.0–6.0). */
+export const HS_WEIGHTED_GPA_MAX = 6;
 
 export function predictSemesterGpaAllAs(
   input: GpaOutlookInput,
 ): GpaOutlookResult {
-  const { currentGpa, hsCredits, semesterCollegeCredits, completedDeCredits = 0 } =
-    input;
+  const { currentGpa, hsCredits, semesterCollegeCredits } = input;
 
-  const safeGpa = Math.min(Math.max(currentGpa, 0), 4);
+  const safeGpa = Math.min(Math.max(currentGpa, 0), HS_WEIGHTED_GPA_MAX);
   const safeHsCredits = Math.max(hsCredits, 0);
   const safeSemesterCredits = Math.max(semesterCollegeCredits, 0);
-  const safeDeCredits = Math.max(completedDeCredits, 0);
 
-  const totalPreviousCredits = safeHsCredits + safeDeCredits;
+  const totalPreviousCredits = safeHsCredits;
   const previousQualityPoints = safeGpa * totalPreviousCredits;
-  const semesterQualityPoints = ALL_A_GRADE_POINTS * safeSemesterCredits;
+  const semesterQualityPoints =
+    WEIGHTED_A_GRADE_POINTS * safeSemesterCredits;
   const newTotalCredits = totalPreviousCredits + safeSemesterCredits;
 
   const projectedGpa =
@@ -43,7 +45,8 @@ export function predictSemesterGpaAllAs(
     totalPreviousCredits,
     newTotalCredits,
     semesterQualityPoints,
-    assumption: "Assumes all A grades (4.0) this semester.",
+    assumption:
+      "Assumes all A grades on college credits this semester (weighted 5.0 on your HS GPA scale). Prior total uses only the HS credits you entered.",
   };
 }
 

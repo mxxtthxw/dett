@@ -172,6 +172,8 @@ export function AiAdvisorTab({
   );
   const [loadingStage, setLoadingStage] = useState<LoadingStage>("idle");
   const [followUpError, setFollowUpError] = useState("");
+  const [followUpSource, setFollowUpSource] = useState<"ai" | "local">("local");
+  const [followUpNotice, setFollowUpNotice] = useState("");
 
   const payload = useMemo(
     () =>
@@ -203,6 +205,8 @@ export function AiAdvisorTab({
     setFollowUpQuestion("");
     setFollowUpHistory([]);
     setFollowUpError("");
+    setFollowUpSource("local");
+    setFollowUpNotice("");
     setLoadingStage("idle");
 
     const messageTimer = window.setInterval(() => {
@@ -290,12 +294,17 @@ export function AiAdvisorTab({
 
         const data = (await response.json()) as {
           answer?: string;
+          source?: "ai" | "local";
+          notice?: string;
           error?: string;
         };
 
         if (!response.ok || !data.answer) {
           throw new Error(data.error ?? "Follow-up request failed.");
         }
+
+        setFollowUpSource(data.source ?? "local");
+        setFollowUpNotice(data.notice ?? "");
 
         setFollowUpHistory((previous) => [
           ...previous,
@@ -470,6 +479,18 @@ export function AiAdvisorTab({
                 report.
               </p>
 
+              {source === "local" ? (
+                <div className="mt-3 border-2 border-[#c0392b] bg-[#fff5f5] px-3 py-2 text-xs leading-relaxed text-[#4a4a4a]">
+                  <strong className="text-[#c0392b]">Smart Demo Mode</strong> —
+                  follow-ups use keyword matching, not live AI. For real
+                  conversational answers, add{" "}
+                  <code className="font-mono text-[11px]">OPENAI_API_KEY</code>{" "}
+                  to <code className="font-mono text-[11px]">.env.local</code>{" "}
+                  and restart the dev server. Tip: include a course code (e.g.
+                  &quot;Will CHEM 1211 count?&quot;) for better demo replies.
+                </div>
+              ) : null}
+
               {followUpHistory.length > 0 ? (
                 <div className="mt-4 space-y-3">
                   {followUpHistory.map((message, index) => (
@@ -518,6 +539,16 @@ export function AiAdvisorTab({
                   {loadingStage !== "idle" ? "Working..." : "Ask"}
                 </RetroButton>
               </div>
+
+              {followUpNotice ? (
+                <p className="mt-2 text-xs text-[#4a4a4a]">{followUpNotice}</p>
+              ) : null}
+
+              {followUpHistory.length > 0 && followUpSource === "local" ? (
+                <p className="mt-2 text-[10px] font-black uppercase tracking-widest text-[#4a4a4a]">
+                  Last reply: Smart Demo Mode
+                </p>
+              ) : null}
 
               {followUpError ? (
                 <p className="mt-2 text-xs font-bold text-[#c0392b]">
