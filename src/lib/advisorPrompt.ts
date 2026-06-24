@@ -256,6 +256,42 @@ export interface FollowUpProfileSnapshot {
   }>;
 }
 
+export function buildFollowUpRequestPayload(input: {
+  displayName: string;
+  intendedMajor: string;
+  question: string;
+  initialAdvice: string;
+  history: Array<{ role: "user" | "assistant"; content: string }>;
+  advisorPayload: AdvisorRequestPayload;
+}): AdvisorFollowUpPayload {
+  const snapshot = buildFollowUpProfileSnapshot(input.advisorPayload);
+
+  return {
+    type: "followup",
+    displayName: input.displayName.trim() || "Student",
+    intendedMajor: input.intendedMajor.trim() || "Undeclared",
+    question: input.question.trim(),
+    initialAdvice: input.initialAdvice.trim(),
+    history: input.history.map((message) => ({
+      role: message.role === "user" ? "user" : "assistant",
+      content: String(message.content ?? ""),
+    })),
+    profileSnapshot: {
+      focusSchoolName: snapshot.focusSchoolName,
+      deOriginSchoolName: snapshot.deOriginSchoolName,
+      attemptedCredits: snapshot.attemptedCredits,
+      acceptedCredits: snapshot.acceptedCredits,
+      reviewCredits: snapshot.reviewCredits,
+      courseCodes: [...snapshot.courseCodes],
+      courseOutcomes: snapshot.courseOutcomes.map((outcome) => ({
+        courseCode: outcome.courseCode,
+        status: outcome.status,
+        targetCourseCode: outcome.targetCourseCode,
+      })),
+    },
+  };
+}
+
 export function buildFollowUpProfileSnapshot(
   payload: AdvisorRequestPayload,
 ): FollowUpProfileSnapshot {

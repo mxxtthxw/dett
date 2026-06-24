@@ -2,7 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Bot, RefreshCw, Sparkles, Terminal } from "lucide-react";
-import { buildAdvisorPayload, buildFollowUpProfileSnapshot } from "@/lib/advisorPrompt";
+import {
+  buildAdvisorPayload,
+  buildFollowUpRequestPayload,
+} from "@/lib/advisorPrompt";
 import type { DualEnrollmentCourse, School } from "@/types";
 import { RetroButton, RetroButtonOutline } from "@/components/checker/RetroButtons";
 
@@ -242,7 +245,16 @@ export function AiAdvisorTab({
   const handleAskQuestion = useCallback(
     async (question: string) => {
       const trimmedQuestion = question.trim();
-      if (!trimmedQuestion || !advice || loadingStage !== "idle") {
+      const initialAdviceText = advice.trim();
+
+      if (!trimmedQuestion || loadingStage !== "idle") {
+        return;
+      }
+
+      if (!initialAdviceText) {
+        setFollowUpError(
+          "Generate your transfer advice first, then ask a follow-up question.",
+        );
         return;
       }
 
@@ -253,19 +265,25 @@ export function AiAdvisorTab({
         setLoadingStage("thinking");
       }, 800);
 
+      const chatHistory = followUpHistory.map((message) => ({
+        role: message.role,
+        content: message.content,
+      }));
+
+      const followUpPayload = buildFollowUpRequestPayload({
+        displayName,
+        intendedMajor,
+        question: trimmedQuestion,
+        initialAdvice: initialAdviceText,
+        history: chatHistory,
+        advisorPayload: payload,
+      });
+
       try {
         const response = await fetch("/api/advisor", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            type: "followup",
-            displayName,
-            intendedMajor,
-            question: trimmedQuestion,
-            initialAdvice: advice,
-            history: followUpHistory,
-            profileSnapshot: buildFollowUpProfileSnapshot(payload),
-          }),
+          body: JSON.stringify(followUpPayload),
         });
 
         setLoadingStage("generating");

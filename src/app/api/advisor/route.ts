@@ -48,12 +48,21 @@ function validateFollowUpPayload(body: unknown): AdvisorFollowUpPayload | null {
     typeof payload.initialAdvice !== "string" ||
     !Array.isArray(payload.history) ||
     !payload.profileSnapshot ||
-    typeof payload.profileSnapshot.focusSchoolName !== "string"
+    typeof payload.profileSnapshot.focusSchoolName !== "string" ||
+    typeof payload.profileSnapshot.attemptedCredits !== "number" ||
+    typeof payload.profileSnapshot.acceptedCredits !== "number" ||
+    payload.history.some(
+      (entry) =>
+        !entry ||
+        typeof entry !== "object" ||
+        (entry.role !== "user" && entry.role !== "assistant") ||
+        typeof entry.content !== "string",
+    )
   ) {
     return null;
   }
 
-  if (!payload.question.trim()) {
+  if (!payload.question.trim() || !payload.initialAdvice.trim()) {
     return null;
   }
 
