@@ -1,7 +1,8 @@
 import {
-  ADVISOR_FOLLOWUP_SYSTEM_PROMPT,
   ADVISOR_SYSTEM_PROMPT,
   buildAdvisorUserPrompt,
+  buildFollowUpContextMessage,
+  buildFollowUpSystemPrompt,
   generateLocalAdvisorAdvice,
   generateLocalFollowUpAnswer,
   type AdvisorFollowUpPayload,
@@ -42,9 +43,12 @@ function validateFollowUpPayload(body: unknown): AdvisorFollowUpPayload | null {
   if (
     payload.type !== "followup" ||
     typeof payload.displayName !== "string" ||
+    typeof payload.intendedMajor !== "string" ||
     typeof payload.question !== "string" ||
     typeof payload.initialAdvice !== "string" ||
-    !Array.isArray(payload.history)
+    !Array.isArray(payload.history) ||
+    !payload.profileSnapshot ||
+    typeof payload.profileSnapshot.focusSchoolName !== "string"
   ) {
     return null;
   }
@@ -104,17 +108,31 @@ async function fetchOpenAiFollowUp(
   apiKey: string,
 ): Promise<string> {
   const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
+  const hasPriorTurns = payload.history.length > 0;
 
-  const messages: Array<{ role: "system" | "user" | "assistant"; content: string }> =
-    [
-      { role: "system", content: ADVISOR_FOLLOWUP_SYSTEM_PROMPT },
-      { role: "assistant", content: payload.initialAdvice },
-      ...payload.history.map((entry) => ({
-        role: entry.role,
-        content: entry.content,
-      })),
-      { role: "user", content: payload.question.trim() },
-    ];
+  const chatHistory: Array<{
+    role: "user" | "assistant";
+    content: string;
+  }> = [
+    { role: "assistant", content: payload.initialAdvice },
+    ...payload.history,
+  ];
+
+  const messages: Array<{
+    role: "system" | "user" | "assistant";
+    content: string;
+  }> = [
+    {
+      role: "system",
+      content: buildFollowUpSystemPrompt(payload.displayName, hasPriorTurns),
+    },
+    {
+      role: "user",
+      content: `Student profile for context:\n${buildFollowUpContextMessage(payload)}`,
+    },
+    ...chatHistory,
+    { role: "user", content: payload.question.trim() },
+  ];
 
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",

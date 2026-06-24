@@ -235,23 +235,141 @@ ${recs}
 export interface AdvisorFollowUpPayload {
   type: "followup";
   displayName: string;
+  intendedMajor: string;
   question: string;
   initialAdvice: string;
   history: Array<{ role: "user" | "assistant"; content: string }>;
+  profileSnapshot: FollowUpProfileSnapshot;
 }
 
-export const ADVISOR_FOLLOWUP_SYSTEM_PROMPT = `${ADVISOR_SYSTEM_PROMPT}
+export interface FollowUpProfileSnapshot {
+  focusSchoolName: string;
+  deOriginSchoolName?: string;
+  attemptedCredits: number;
+  acceptedCredits: number;
+  reviewCredits: number;
+  courseCodes: string[];
+  courseOutcomes: Array<{
+    courseCode: string;
+    status: string;
+    targetCourseCode?: string;
+  }>;
+}
 
-You are now answering a follow-up question from the student. Keep answers concise (under 180 words), friendly, and grounded in the original transfer analysis. Do not repeat the entire original advice.`;
+export function buildFollowUpProfileSnapshot(
+  payload: AdvisorRequestPayload,
+): FollowUpProfileSnapshot {
+  const focus =
+    payload.schoolSummaries.find(
+      (entry) => entry.schoolId === payload.focusSchoolId,
+    ) ?? payload.schoolSummaries[0];
+
+  return {
+    focusSchoolName: focus?.schoolName ?? "Unknown",
+    deOriginSchoolName: payload.deOriginSchoolName,
+    attemptedCredits: focus?.attemptedCredits ?? 0,
+    acceptedCredits: focus?.acceptedCredits ?? 0,
+    reviewCredits: focus?.reviewCredits ?? 0,
+    courseCodes: payload.courses.map((course) => course.courseCode),
+    courseOutcomes: (focus?.courseOutcomes ?? []).map((outcome) => ({
+      courseCode: outcome.courseCode,
+      status: outcome.status,
+      targetCourseCode: outcome.targetCourseCode,
+    })),
+  };
+}
+
+export function buildFollowUpSystemPrompt(
+  displayName: string,
+  hasPriorTurns: boolean,
+): string {
+  const studentName = displayName.trim() || "the student";
+
+  return `You are an expert academic advisor for DETT (Dual Enrollment Transfer Tool). You help Georgia dual enrollment students transfer credits to universities.
+
+You already delivered a full transfer report. ${studentName} is now chatting with follow-up questions.
+
+CRITICAL — follow-up mode rules:
+- Answer their specific question directly. Talk like a human advisor in office hours.
+- Do NOT use the Transfer Snapshot / What's Working / Gaps & Risks / Recommended Next Courses / Action Plan section template.
+- Do NOT repeat or re-summarize your entire prior report unless they explicitly ask for a recap.
+- Do NOT start with "Hi ${studentName}" every time — vary your openings.
+- Keep replies under 150 words (2–4 short paragraphs or a tight bullet list if helpful).
+- Ground answers in the student profile JSON and conversation history provided.
+- If a course appears in their profile with a status (direct, review, elective, no_match), reference that status when relevant.
+- Do not invent university policies not supported by the data given.
+
+${hasPriorTurns ? "This is a continuing conversation — build on what you already said; never rehash the same points." : "This is their first follow-up after the initial report."}`;
+}
+
+export function buildFollowUpContextMessage(
+  payload: AdvisorFollowUpPayload,
+): string {
+  return JSON.stringify(
+    {
+      student: {
+        name: payload.displayName.trim() || "Student",
+        intendedMajor: payload.intendedMajor.trim() || "Undeclared",
+      },
+      profileSnapshot: payload.profileSnapshot,
+      note: "Use this profile data to answer the student's follow-up. Do not output JSON — reply in plain, friendly prose.",
+    },
+    null,
+    2,
+  );
+}
+
+export const ADVISOR_FOLLOWUP_SYSTEM_PROMPT = buildFollowUpSystemPrompt(
+  "Student",
+  false,
+);
 
 export function generateLocalFollowUpAnswer(
   payload: AdvisorFollowUpPayload,
 ): string {
   const name = payload.displayName.trim() || "there";
   const question = payload.question.toLowerCase();
+  const snapshot = payload.profileSnapshot;
+  const priorTopics = payload.history
+    .filter((entry) => entry.role === "assistant")
+    .join(" ")
+    .toLowerCase();
+
+  const findCourseMention = () => {
+    for (const outcome of snapshot.courseOutcomes) {
+      const code = outcome.courseCode.toLowerCase();
+      const shortCode = code.replace(/\s+/g, "");
+      if (
+        question.includes(code) ||
+        question.includes(shortCode) ||
+        question.includes(outcome.courseCode.split(" ")[0]?.toLowerCase() ?? "")
+      ) {
+        return outcome;
+      }
+    }
+    return null;
+  };
+
+  const mentionedCourse = findCourseMention();
+  if (mentionedCourse) {
+    const target = mentionedCourse.targetCourseCode ?? "no mapped equivalent";
+    if (mentionedCourse.status === "review") {
+      return `${name}, **${mentionedCourse.courseCode}** maps to ${target} at ${snapshot.focusSchoolName}, but it's flagged for departmental review. Send your syllabus to the transfer office early — it may still count as elective credit while pending.`;
+    }
+    if (mentionedCourse.status === "no_match") {
+      return `**${mentionedCourse.courseCode}** doesn't have a direct match to ${snapshot.focusSchoolName} in DETT yet. Ask your counselor to request a manual evaluation — sometimes courses count even without a published equivalency.`;
+    }
+    if (mentionedCourse.status === "elective") {
+      return `At ${snapshot.focusSchoolName}, **${mentionedCourse.courseCode}** (${target}) transfers as elective credit. It helps your total hours but may not satisfy a core or major requirement — check whether you still need that area filled.`;
+    }
+    return `Yes — **${mentionedCourse.courseCode}** transfers directly to **${target}** at ${snapshot.focusSchoolName}. That should count toward your requirements without extra review.`;
+  }
 
   if (question.includes("gpa") || question.includes("grade")) {
-    return `Hi ${name} — GPA impact depends on how many credits you take and the grades you earn. Use the **GPA Outlook** tab on your results page to forecast your cumulative GPA if you earn all A's this semester. Strong DE grades can noticeably help if you're taking several college credits.`;
+    if (priorTopics.includes("gpa outlook")) {
+      return `Plug your numbers into the **GPA Outlook** tab — it updates instantly. The biggest lever is how many college credits you take this term and the grades you earn on them.`;
+    }
+    return `${name}, open the **GPA Outlook** tab next to this advisor. Enter your current GPA, high school credits (~7 per year if unsure), and college credits this semester to see your projected GPA if you earn all A's.`;
   }
 
   if (
@@ -259,15 +377,24 @@ export function generateLocalFollowUpAnswer(
     question.includes("department") ||
     question.includes("accept")
   ) {
-    return `Great question, ${name}. Courses marked **review** at your target school usually need a syllabus or catalog description before they count toward major requirements — they may still transfer as elective credit. Ask your DE counselor to request a formal evaluation from the university's transfer office early.`;
+    if (snapshot.reviewCredits > 0) {
+      return `${snapshot.reviewCredits} of your credits at ${snapshot.focusSchoolName} need review. Courses stuck in review often need a syllabus — your DE counselor can submit one to the registrar before you apply.`;
+    }
+    return `None of your current courses are flagged for review at ${snapshot.focusSchoolName}. You're in good shape on acceptance — focus on filling any core or major gaps next.`;
   }
 
   if (
     question.includes("next") ||
     question.includes("course") ||
-    question.includes("take")
+    question.includes("take") ||
+    question.includes("should i")
   ) {
-    return `Based on your DETT report, ${name}, prioritize courses that fill core gaps first (English, math, history, lab science), then stack major prerequisites. Re-run DETT after adding planned courses to see which target school accepts them best.`;
+    const taken = new Set(snapshot.courseCodes);
+    const missing = RECOMMENDED_POOL.find((entry) => !taken.has(entry.code));
+    if (missing) {
+      return `Given what you've already taken (${snapshot.courseCodes.join(", ")}), I'd look at **${missing.code}** next — ${missing.reason}. Add it in DETT to preview how ${snapshot.focusSchoolName} treats it.`;
+    }
+    return `You've covered the usual DE building blocks. Next step: stack courses aligned with **${payload.intendedMajor.trim() || "your major"}** — ask your target department which prerequisites they want to see on your transcript.`;
   }
 
   if (
@@ -275,8 +402,24 @@ export function generateLocalFollowUpAnswer(
     question.includes("howard") ||
     question.includes("hbcu")
   ) {
-    return `${name}, HBCU transfer policies vary by department. DETT maps common Georgia DE courses to each school's catalog, but you should confirm with the registrar — especially for lab sciences and upper-level math.`;
+    return `${name}, HBCU departments often evaluate lab sciences and upper-level math individually. DETT shows published mappings for ${snapshot.focusSchoolName}, but confirm with their registrar — especially for courses marked review.`;
   }
 
-  return `Thanks for asking, ${name}. Based on your transfer snapshot, keep confirming equivalencies with your counselor and your target school's transfer portal. If you share a specific course or school in your question, I can be more precise — try asking about a course code or requirement area.`;
+  if (
+    question.includes("origin") ||
+    question.includes("where") ||
+    snapshot.deOriginSchoolName &&
+      question.includes(snapshot.deOriginSchoolName.toLowerCase())
+  ) {
+    return `Your DE courses are analyzed from **${snapshot.deOriginSchoolName ?? "your origin school"}** toward **${snapshot.focusSchoolName}**. Articulation agreements can differ by origin — that's why DETT tracks where you took each class.`;
+  }
+
+  const acceptancePct =
+    snapshot.attemptedCredits > 0
+      ? Math.round(
+          (snapshot.acceptedCredits / snapshot.attemptedCredits) * 100,
+        )
+      : 0;
+
+  return `${name}, at ${snapshot.focusSchoolName} you're at **${snapshot.acceptedCredits}/${snapshot.attemptedCredits}** accepted credits (${acceptancePct}%). Ask about a specific course code or requirement area and I can dig in — e.g. "Will CHEM 1211 count?"`;
 }

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Bot, RefreshCw, Sparkles, Terminal } from "lucide-react";
-import { buildAdvisorPayload } from "@/lib/advisorPrompt";
+import { buildAdvisorPayload, buildFollowUpProfileSnapshot } from "@/lib/advisorPrompt";
 import type { DualEnrollmentCourse, School } from "@/types";
 import { RetroButton, RetroButtonOutline } from "@/components/checker/RetroButtons";
 
@@ -19,6 +19,8 @@ interface FollowUpMessage {
   role: "user" | "assistant";
   content: string;
 }
+
+type LoadingStage = "idle" | "processing" | "thinking" | "generating";
 
 const LOADING_MESSAGES = [
   "Parsing transfer equivalencies...",
@@ -96,6 +98,30 @@ function renderMarkdownSections(text: string) {
   });
 }
 
+function FollowUpLoadingIndicator({ stage }: { stage: LoadingStage }) {
+  if (stage === "idle") {
+    return null;
+  }
+
+  const label =
+    stage === "processing"
+      ? "Processing report data..."
+      : stage === "thinking"
+        ? "Analyzing transfer rules..."
+        : "Formatting advice...";
+
+  return (
+    <div
+      className="mt-4 flex items-center gap-3 border-2 border-black bg-[#1a1a2e] px-4 py-3 font-mono text-sm text-[#f5c842] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] animate-pulse"
+      role="status"
+      aria-live="polite"
+    >
+      <span className="inline-block h-2 w-2 shrink-0 animate-bounce rounded-full bg-[#10b981]" />
+      <span>{label}</span>
+    </div>
+  );
+}
+
 function AdvisorTerminalLoader({ messageIndex }: { messageIndex: number }) {
   return (
     <div className="border-4 border-black bg-[#1a1a2e] p-6 text-[#f5c842] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
@@ -141,7 +167,7 @@ export function AiAdvisorTab({
   const [followUpHistory, setFollowUpHistory] = useState<FollowUpMessage[]>(
     [],
   );
-  const [followUpLoading, setFollowUpLoading] = useState(false);
+  const [loadingStage, setLoadingStage] = useState<LoadingStage>("idle");
   const [followUpError, setFollowUpError] = useState("");
 
   const payload = useMemo(
@@ -174,6 +200,7 @@ export function AiAdvisorTab({
     setFollowUpQuestion("");
     setFollowUpHistory([]);
     setFollowUpError("");
+    setLoadingStage("idle");
 
     const messageTimer = window.setInterval(() => {
       setLoadingIndex((index) => (index + 1) % LOADING_MESSAGES.length);
@@ -212,57 +239,74 @@ export function AiAdvisorTab({
     }
   }, [onAdviceUpdate, payload]);
 
-  const submitFollowUp = useCallback(async () => {
-    const trimmedQuestion = followUpQuestion.trim();
-    if (!trimmedQuestion || !advice || followUpLoading) {
-      return;
-    }
-
-    setFollowUpLoading(true);
-    setFollowUpError("");
-
-    try {
-      const response = await fetch("/api/advisor", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: "followup",
-          displayName,
-          question: trimmedQuestion,
-          initialAdvice: advice,
-          history: followUpHistory,
-        }),
-      });
-
-      const data = (await response.json()) as {
-        answer?: string;
-        error?: string;
-      };
-
-      if (!response.ok || !data.answer) {
-        throw new Error(data.error ?? "Follow-up request failed.");
+  const handleAskQuestion = useCallback(
+    async (question: string) => {
+      const trimmedQuestion = question.trim();
+      if (!trimmedQuestion || !advice || loadingStage !== "idle") {
+        return;
       }
 
-      setFollowUpHistory((previous) => [
-        ...previous,
-        { role: "user", content: trimmedQuestion },
-        { role: "assistant", content: data.answer ?? "" },
-      ]);
-      setFollowUpQuestion("");
-    } catch (error) {
-      setFollowUpError(
-        error instanceof Error ? error.message : "Something went wrong.",
-      );
-    } finally {
-      setFollowUpLoading(false);
-    }
-  }, [
-    advice,
-    displayName,
-    followUpHistory,
-    followUpLoading,
-    followUpQuestion,
-  ]);
+      setFollowUpError("");
+      setLoadingStage("processing");
+
+      const thinkingTimer = window.setTimeout(() => {
+        setLoadingStage("thinking");
+      }, 800);
+
+      try {
+        const response = await fetch("/api/advisor", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "followup",
+            displayName,
+            intendedMajor,
+            question: trimmedQuestion,
+            initialAdvice: advice,
+            history: followUpHistory,
+            profileSnapshot: buildFollowUpProfileSnapshot(payload),
+          }),
+        });
+
+        setLoadingStage("generating");
+
+        const data = (await response.json()) as {
+          answer?: string;
+          error?: string;
+        };
+
+        if (!response.ok || !data.answer) {
+          throw new Error(data.error ?? "Follow-up request failed.");
+        }
+
+        setFollowUpHistory((previous) => [
+          ...previous,
+          { role: "user", content: trimmedQuestion },
+          { role: "assistant", content: data.answer ?? "" },
+        ]);
+        setFollowUpQuestion("");
+      } catch (error) {
+        setFollowUpError(
+          error instanceof Error ? error.message : "Something went wrong.",
+        );
+      } finally {
+        window.clearTimeout(thinkingTimer);
+        setLoadingStage("idle");
+      }
+    },
+    [
+      advice,
+      displayName,
+      followUpHistory,
+      intendedMajor,
+      loadingStage,
+      payload,
+    ],
+  );
+
+  const submitFollowUp = useCallback(() => {
+    void handleAskQuestion(followUpQuestion);
+  }, [followUpQuestion, handleAskQuestion]);
 
   const focusSchool = selectedSchools.find(
     (school) => school.id === focusSchoolId,
@@ -430,6 +474,8 @@ export function AiAdvisorTab({
                 </div>
               ) : null}
 
+              <FollowUpLoadingIndicator stage={loadingStage} />
+
               <div className="mt-4 flex flex-col gap-3 sm:flex-row">
                 <input
                   type="text"
@@ -438,18 +484,20 @@ export function AiAdvisorTab({
                   onKeyDown={(event) => {
                     if (event.key === "Enter") {
                       event.preventDefault();
-                      void submitFollowUp();
+                      submitFollowUp();
                     }
                   }}
-                  disabled={followUpLoading}
+                  disabled={loadingStage !== "idle"}
                   placeholder="e.g. Will CHEM 1211 count at my target school?"
                   className="min-w-0 flex-1 border-4 border-black bg-white px-3 py-2 text-sm font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:border-[#c0392b] focus:outline-none disabled:opacity-60"
                 />
                 <RetroButton
-                  onClick={() => void submitFollowUp()}
-                  disabled={followUpLoading || !followUpQuestion.trim()}
+                  onClick={submitFollowUp}
+                  disabled={
+                    loadingStage !== "idle" || !followUpQuestion.trim()
+                  }
                 >
-                  {followUpLoading ? "Thinking..." : "Ask"}
+                  {loadingStage !== "idle" ? "Working..." : "Ask"}
                 </RetroButton>
               </div>
 
