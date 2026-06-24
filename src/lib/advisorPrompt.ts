@@ -231,3 +231,52 @@ ${recs}
 
 *Demo advisor — add \`OPENAI_API_KEY\` for live AI analysis.*`;
 }
+
+export interface AdvisorFollowUpPayload {
+  type: "followup";
+  displayName: string;
+  question: string;
+  initialAdvice: string;
+  history: Array<{ role: "user" | "assistant"; content: string }>;
+}
+
+export const ADVISOR_FOLLOWUP_SYSTEM_PROMPT = `${ADVISOR_SYSTEM_PROMPT}
+
+You are now answering a follow-up question from the student. Keep answers concise (under 180 words), friendly, and grounded in the original transfer analysis. Do not repeat the entire original advice.`;
+
+export function generateLocalFollowUpAnswer(
+  payload: AdvisorFollowUpPayload,
+): string {
+  const name = payload.displayName.trim() || "there";
+  const question = payload.question.toLowerCase();
+
+  if (question.includes("gpa") || question.includes("grade")) {
+    return `Hi ${name} — GPA impact depends on how many credits you take and the grades you earn. Use the **GPA Outlook** tab on your results page to forecast your cumulative GPA if you earn all A's this semester. Strong DE grades can noticeably help if you're taking several college credits.`;
+  }
+
+  if (
+    question.includes("review") ||
+    question.includes("department") ||
+    question.includes("accept")
+  ) {
+    return `Great question, ${name}. Courses marked **review** at your target school usually need a syllabus or catalog description before they count toward major requirements — they may still transfer as elective credit. Ask your DE counselor to request a formal evaluation from the university's transfer office early.`;
+  }
+
+  if (
+    question.includes("next") ||
+    question.includes("course") ||
+    question.includes("take")
+  ) {
+    return `Based on your DETT report, ${name}, prioritize courses that fill core gaps first (English, math, history, lab science), then stack major prerequisites. Re-run DETT after adding planned courses to see which target school accepts them best.`;
+  }
+
+  if (
+    question.includes("spelman") ||
+    question.includes("howard") ||
+    question.includes("hbcu")
+  ) {
+    return `${name}, HBCU transfer policies vary by department. DETT maps common Georgia DE courses to each school's catalog, but you should confirm with the registrar — especially for lab sciences and upper-level math.`;
+  }
+
+  return `Thanks for asking, ${name}. Based on your transfer snapshot, keep confirming equivalencies with your counselor and your target school's transfer portal. If you share a specific course or school in your question, I can be more precise — try asking about a course code or requirement area.`;
+}

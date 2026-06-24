@@ -12,6 +12,12 @@ interface AiAdvisorTabProps {
   selectedSchools: School[];
   selectedCourses: DualEnrollmentCourse[];
   originSchoolId?: string;
+  onAdviceUpdate?: (advice: string) => void;
+}
+
+interface FollowUpMessage {
+  role: "user" | "assistant";
+  content: string;
 }
 
 const LOADING_MESSAGES = [
@@ -117,6 +123,7 @@ export function AiAdvisorTab({
   selectedSchools,
   selectedCourses,
   originSchoolId,
+  onAdviceUpdate,
 }: AiAdvisorTabProps) {
   const [focusSchoolId, setFocusSchoolId] = useState(
     selectedSchools[0]?.id ?? "",
@@ -130,6 +137,12 @@ export function AiAdvisorTab({
   const [loadingIndex, setLoadingIndex] = useState(0);
   const [errorMessage, setErrorMessage] = useState("");
   const [typingComplete, setTypingComplete] = useState(false);
+  const [followUpQuestion, setFollowUpQuestion] = useState("");
+  const [followUpHistory, setFollowUpHistory] = useState<FollowUpMessage[]>(
+    [],
+  );
+  const [followUpLoading, setFollowUpLoading] = useState(false);
+  const [followUpError, setFollowUpError] = useState("");
 
   const payload = useMemo(
     () =>
@@ -158,6 +171,9 @@ export function AiAdvisorTab({
     setErrorMessage("");
     setTypingComplete(false);
     setLoadingIndex(0);
+    setFollowUpQuestion("");
+    setFollowUpHistory([]);
+    setFollowUpError("");
 
     const messageTimer = window.setInterval(() => {
       setLoadingIndex((index) => (index + 1) % LOADING_MESSAGES.length);
@@ -185,6 +201,7 @@ export function AiAdvisorTab({
       setSource(data.source ?? "local");
       setNotice(data.notice ?? "");
       setStatus("ready");
+      onAdviceUpdate?.(data.advice);
     } catch (error) {
       setStatus("error");
       setErrorMessage(
@@ -193,7 +210,59 @@ export function AiAdvisorTab({
     } finally {
       window.clearInterval(messageTimer);
     }
-  }, [payload]);
+  }, [onAdviceUpdate, payload]);
+
+  const submitFollowUp = useCallback(async () => {
+    const trimmedQuestion = followUpQuestion.trim();
+    if (!trimmedQuestion || !advice || followUpLoading) {
+      return;
+    }
+
+    setFollowUpLoading(true);
+    setFollowUpError("");
+
+    try {
+      const response = await fetch("/api/advisor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "followup",
+          displayName,
+          question: trimmedQuestion,
+          initialAdvice: advice,
+          history: followUpHistory,
+        }),
+      });
+
+      const data = (await response.json()) as {
+        answer?: string;
+        error?: string;
+      };
+
+      if (!response.ok || !data.answer) {
+        throw new Error(data.error ?? "Follow-up request failed.");
+      }
+
+      setFollowUpHistory((previous) => [
+        ...previous,
+        { role: "user", content: trimmedQuestion },
+        { role: "assistant", content: data.answer ?? "" },
+      ]);
+      setFollowUpQuestion("");
+    } catch (error) {
+      setFollowUpError(
+        error instanceof Error ? error.message : "Something went wrong.",
+      );
+    } finally {
+      setFollowUpLoading(false);
+    }
+  }, [
+    advice,
+    displayName,
+    followUpHistory,
+    followUpLoading,
+    followUpQuestion,
+  ]);
 
   const focusSchool = selectedSchools.find(
     (school) => school.id === focusSchoolId,
@@ -327,6 +396,69 @@ export function AiAdvisorTab({
 
           {typingComplete ? (
             <div className="grid gap-4">{renderMarkdownSections(advice)}</div>
+          ) : null}
+
+          {typingComplete ? (
+            <div className="border-4 border-black bg-[#f5f0e8] p-5 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+              <p className="text-sm font-black uppercase tracking-widest text-[#1a1a2e]">
+                Do you have any questions, {displayName.trim() || "there"}?
+              </p>
+              <p className="mt-1 text-xs text-[#4a4a4a]">
+                Ask about transfer rules, next courses, or anything in your
+                report.
+              </p>
+
+              {followUpHistory.length > 0 ? (
+                <div className="mt-4 space-y-3">
+                  {followUpHistory.map((message, index) => (
+                    <div
+                      key={`${message.role}-${index}`}
+                      className={`border-2 border-black px-3 py-2 text-sm ${
+                        message.role === "user"
+                          ? "bg-white text-[#1a1a2e]"
+                          : "bg-[#1a1a2e] font-mono text-[#f5c842]"
+                      }`}
+                    >
+                      <p className="mb-1 text-[10px] font-black uppercase tracking-widest opacity-70">
+                        {message.role === "user" ? "You" : "DETT Advisor"}
+                      </p>
+                      <p className="whitespace-pre-wrap leading-relaxed">
+                        {message.content}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+
+              <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                <input
+                  type="text"
+                  value={followUpQuestion}
+                  onChange={(event) => setFollowUpQuestion(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      void submitFollowUp();
+                    }
+                  }}
+                  disabled={followUpLoading}
+                  placeholder="e.g. Will CHEM 1211 count at my target school?"
+                  className="min-w-0 flex-1 border-4 border-black bg-white px-3 py-2 text-sm font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:border-[#c0392b] focus:outline-none disabled:opacity-60"
+                />
+                <RetroButton
+                  onClick={() => void submitFollowUp()}
+                  disabled={followUpLoading || !followUpQuestion.trim()}
+                >
+                  {followUpLoading ? "Thinking..." : "Ask"}
+                </RetroButton>
+              </div>
+
+              {followUpError ? (
+                <p className="mt-2 text-xs font-bold text-[#c0392b]">
+                  {followUpError}
+                </p>
+              ) : null}
+            </div>
           ) : null}
         </div>
       ) : null}

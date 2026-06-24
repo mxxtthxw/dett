@@ -3,6 +3,11 @@ import {
   claytonStateEquivalencies,
   northGeorgiaEquivalencies,
 } from "@/lib/usgEquivalencyBuilder";
+import {
+  howardEquivalencies,
+  spelmanEquivalencies,
+  toccoaFallsEquivalencies,
+} from "@/lib/howardToccoaEquivalencies";
 
 const GT = "georgia-tech";
 const UGA = "uga";
@@ -1616,5 +1621,8 @@ export const MOCK_EQUIVALENCIES: TransferEquivalency[] = [
   ...kennesawStateEquivalencies,
   ...claytonStateEquivalencies,
   ...northGeorgiaEquivalencies,
+  ...howardEquivalencies,
+  ...toccoaFallsEquivalencies,
+  ...spelmanEquivalencies,
   ...additionalSchoolEquivalencies,
 ];

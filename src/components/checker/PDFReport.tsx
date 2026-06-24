@@ -11,6 +11,15 @@ interface PDFReportProps {
   selectedCourses: DualEnrollmentCourse[];
   intendedMajor?: string;
   originSchoolId?: string;
+  advisorAdvice?: string;
+}
+
+function formatAdvisorAdviceForPrint(advice: string): string {
+  return advice
+    .replace(/^## /gm, "")
+    .replace(/\*\*(.*?)\*\*/g, "$1")
+    .replace(/^- /gm, "• ")
+    .trim();
 }
 
 function statusLabel(status: TransferStatus | undefined): string {
@@ -35,6 +44,7 @@ export function PDFReport({
   selectedCourses,
   intendedMajor = "",
   originSchoolId,
+  advisorAdvice,
 }: PDFReportProps) {
   const schoolSummaries = useMemo(
     () =>
@@ -122,6 +132,15 @@ export function PDFReport({
             </tbody>
           </table>
         </section>
+
+        {advisorAdvice ? (
+          <section className="dett-print-avoid-break mt-8 border-4 border-black p-6">
+            <h2 className="mb-4 font-black uppercase">DETT suggests:</h2>
+            <div className="whitespace-pre-wrap text-sm leading-relaxed">
+              {formatAdvisorAdviceForPrint(advisorAdvice)}
+            </div>
+          </section>
+        ) : null}
 
         {schoolSummaries.map(({ school, summary }, index) => (
           <section

@@ -14,6 +14,8 @@ const SCHOOL_DIFFICULTY: Record<string, number> = {
   morehouse: 0.88,
   spelman: 0.86,
   mercer: 0.84,
+  howard: 0.74,
+  "toccoa-falls-college": 0.93,
 };
 
 const DEFAULT_DIFFICULTY = 0.88;

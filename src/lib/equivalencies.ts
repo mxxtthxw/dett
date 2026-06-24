@@ -5,7 +5,14 @@ import {
   georgiaStatePerimeterEquivalencies,
 } from "@/lib/usgEquivalencyBuilder";
 import {
+  buildDirectToccoaFallsEquivalency,
+  lookupHowardEquivalency,
+  lookupToccoaFallsEquivalency,
+} from "@/lib/howardToccoaEquivalencies";
+import {
+  isHowardPriorityTransfer,
   isPerimeterToGsuTransfer,
+  isToccoaFallsHomeTransfer,
   shouldUseOriginArticulation,
 } from "@/lib/originEquivalencyRules";
 
@@ -71,6 +78,30 @@ export function findEquivalency(
   originSchoolId?: string,
 ): TransferEquivalency | null {
   const mockMatch = lookupMockEquivalency(sourceCourseId, targetSchoolId);
+
+  if (isHowardPriorityTransfer(originSchoolId, targetSchoolId)) {
+    return (
+      lookupHowardEquivalency(sourceCourseId, true) ??
+      mockMatch ??
+      lookupHowardEquivalency(sourceCourseId, false)
+    );
+  }
+
+  if (targetSchoolId === "howard") {
+    return mockMatch ?? lookupHowardEquivalency(sourceCourseId, false);
+  }
+
+  if (isToccoaFallsHomeTransfer(originSchoolId, targetSchoolId)) {
+    return (
+      lookupToccoaFallsEquivalency(sourceCourseId) ??
+      mockMatch ??
+      buildDirectToccoaFallsEquivalency(sourceCourseId)
+    );
+  }
+
+  if (targetSchoolId === "toccoa-falls-college") {
+    return mockMatch ?? lookupToccoaFallsEquivalency(sourceCourseId);
+  }
 
   if (isPerimeterToGsuTransfer(originSchoolId, targetSchoolId)) {
     return (

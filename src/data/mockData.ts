@@ -117,6 +117,20 @@ export const PRELOADED_SCHOOLS: School[] = [
     is_retro: true,
   },
   {
+    id: "howard",
+    name: "Howard University",
+    type: "university",
+    state: "DC",
+    is_retro: true,
+  },
+  {
+    id: "toccoa-falls-college",
+    name: "Toccoa Falls College",
+    type: "university",
+    state: "GA",
+    is_retro: true,
+  },
+  {
     id: "nc-at",
     name: "North Carolina A&T State University",
     type: "university",

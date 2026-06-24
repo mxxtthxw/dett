@@ -1,5 +1,5 @@
 import { DE_ORIGIN_SCHOOLS } from "@/data/mockData";
-import { PRIORITY_DE_ORIGIN_IDS } from "@/lib/originEquivalencyRules";
+import { PRIORITY_DE_ORIGIN_IDS, HOWARD_PRIORITY_ORIGIN_IDS } from "@/lib/originEquivalencyRules";
 
 interface OriginSchoolSelectorProps {
   value: string;
@@ -11,6 +11,7 @@ export function OriginSchoolSelector({
   onChange,
 }: OriginSchoolSelectorProps) {
   const isVerifiedOrigin = PRIORITY_DE_ORIGIN_IDS.has(value);
+  const isHowardPipelineOrigin = HOWARD_PRIORITY_ORIGIN_IDS.has(value);
 
   return (
     <div className="mb-6 border-4 border-black bg-white p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
@@ -33,6 +34,9 @@ export function OriginSchoolSelector({
       {isVerifiedOrigin ? (
         <p className="mt-3 text-[10px] font-bold uppercase tracking-wider dett-live-value">
           ✓ Verified articulation tables for this DE origin
+          {isHowardPipelineOrigin
+            ? " · Howard University pipeline emphasized"
+            : ""}
         </p>
       ) : null}
     </div>

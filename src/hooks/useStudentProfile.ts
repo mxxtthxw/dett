@@ -57,6 +57,11 @@ function normalizeProfile(raw: Partial<StudentProfile>): StudentProfile {
     savePromptDismissed:
       raw.savePromptDismissed ?? defaults.savePromptDismissed,
     originSchoolId: raw.originSchoolId ?? defaults.originSchoolId,
+    currentGpa: raw.currentGpa ?? defaults.currentGpa,
+    hsCredits: raw.hsCredits ?? defaults.hsCredits,
+    semesterCollegeCredits:
+      raw.semesterCollegeCredits ?? defaults.semesterCollegeCredits,
+    lastAdvisorAdvice: raw.lastAdvisorAdvice ?? defaults.lastAdvisorAdvice,
   };
 }
 

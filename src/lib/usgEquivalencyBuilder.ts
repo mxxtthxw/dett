@@ -1,4 +1,5 @@
 import { PRELOADED_COURSES } from "@/data/mockData";
+import { buildDirectToccoaFallsEquivalency } from "@/lib/howardToccoaEquivalencies";
 import type { TransferEquivalency, TransferStatus } from "@/types";
 
 type CourseOverride = {
@@ -168,8 +169,10 @@ export function buildDirectHomeInstitutionEquivalency(
     overrides = CLAYTON_STATE_OVERRIDES;
   } else if (targetSchoolId === "north-georgia") {
     overrides = NORTH_GEORGIA_OVERRIDES;
-  } else if (targetSchoolId === "georgia-state") {
+  } else   if (targetSchoolId === "georgia-state") {
     overrides = GEORGIA_STATE_OVERRIDES;
+  } else if (targetSchoolId === "toccoa-falls-college") {
+    return buildDirectToccoaFallsEquivalency(sourceCourseId);
   }
 
   const override = overrides[sourceCourseId];

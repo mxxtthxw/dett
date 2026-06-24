@@ -13,6 +13,7 @@ import { StoryStep } from "@/components/checker/StoryStep";
 import { ResultsTable } from "@/components/checker/ResultsTable";
 import { CompareView } from "@/components/checker/CompareView";
 import { AiAdvisorTab } from "@/components/checker/AiAdvisorTab";
+import { GpaOutlookTab } from "@/components/checker/GpaOutlookTab";
 import { ReportProgressGauge } from "@/components/checker/ReportProgressGauge";
 import { RequirementTracker } from "@/components/checker/RequirementTracker";
 import { PDFReport } from "@/components/checker/PDFReport";
@@ -24,7 +25,7 @@ import {
   stepMotion,
 } from "@/components/checker/RetroButtons";
 
-type ResultsTab = "all" | "compare" | "advisor";
+type ResultsTab = "all" | "compare" | "advisor" | "gpa-outlook";
 
 function BackToStartLink({ onClick }: { onClick: () => void }) {
   return (
@@ -43,6 +44,11 @@ export function WizardShell() {
   const [resultsTab, setResultsTab] = useState<ResultsTab>("all");
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [trackerSchoolId, setTrackerSchoolId] = useState("");
+
+  const completedDeCredits = useMemo(
+    () => profile.courses.reduce((sum, course) => sum + course.credits, 0),
+    [profile.courses],
+  );
 
   const step = profile.wizardStep;
 
@@ -401,13 +407,24 @@ export function WizardShell() {
               <button
                 type="button"
                 onClick={() => setResultsTab("advisor")}
-                className={`px-4 py-2.5 text-[10px] font-black uppercase tracking-widest transition-colors sm:px-5 sm:text-xs ${
+                className={`border-r-4 border-black px-4 py-2.5 text-[10px] font-black uppercase tracking-widest transition-colors sm:px-5 sm:text-xs ${
                   resultsTab === "advisor"
                     ? "bg-[#1a1a2e] text-emerald-400"
                     : "bg-[#f5f0e8] text-[#1a1a2e] hover:bg-emerald-50"
                 }`}
               >
                 AI Advisor
+              </button>
+              <button
+                type="button"
+                onClick={() => setResultsTab("gpa-outlook")}
+                className={`px-4 py-2.5 text-[10px] font-black uppercase tracking-widest transition-colors sm:px-5 sm:text-xs ${
+                  resultsTab === "gpa-outlook"
+                    ? "bg-[#1a1a2e] text-emerald-400"
+                    : "bg-[#f5f0e8] text-[#1a1a2e] hover:bg-emerald-50"
+                }`}
+              >
+                GPA Outlook
               </button>
             </div>
 
@@ -432,6 +449,23 @@ export function WizardShell() {
                 selectedSchools={selectedSchools}
                 selectedCourses={profile.courses}
                 originSchoolId={profile.originSchoolId}
+                onAdviceUpdate={(advice) =>
+                  setProfile((previous) => ({
+                    ...previous,
+                    lastAdvisorAdvice: advice,
+                  }))
+                }
+              />
+            ) : null}
+            {resultsTab === "gpa-outlook" ? (
+              <GpaOutlookTab
+                currentGpa={profile.currentGpa}
+                hsCredits={profile.hsCredits}
+                semesterCollegeCredits={profile.semesterCollegeCredits}
+                completedDeCredits={completedDeCredits}
+                onChange={(values) =>
+                  setProfile((previous) => ({ ...previous, ...values }))
+                }
               />
             ) : null}
 
@@ -447,6 +481,7 @@ export function WizardShell() {
                   selectedCourses={profile.courses}
                   intendedMajor={profile.intendedMajor}
                   originSchoolId={profile.originSchoolId}
+                  advisorAdvice={profile.lastAdvisorAdvice}
                 />
               </div>
             </div>

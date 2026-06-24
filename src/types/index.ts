@@ -52,6 +52,10 @@ export interface StudentProfile {
   savePromptDismissed?: boolean;
   /** Institution where the student took their DE classes. */
   originSchoolId: string;
+  currentGpa?: number;
+  hsCredits?: number;
+  semesterCollegeCredits?: number;
+  lastAdvisorAdvice?: string;
 }
 
 export function createEmptyStudentProfile(): StudentProfile {
