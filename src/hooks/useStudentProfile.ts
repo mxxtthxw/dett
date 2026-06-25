@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { saveAccountProfile } from "@/lib/accounts";
+import { loginAccount, saveAccountProfile } from "@/lib/accounts";
 import {
   createEmptyStudentProfile,
   type StudentProfile,
@@ -114,10 +114,19 @@ export function useStudentProfile() {
     setProfileState(createEmptyStudentProfile());
   }, []);
 
+  const login = useCallback((username: string, password: string) => {
+    const result = loginAccount(username, password);
+    if (result.ok && result.profile) {
+      setProfileState(normalizeProfile(result.profile));
+    }
+    return result;
+  }, []);
+
   return {
     profile,
     setProfile,
     resetProfile,
+    login,
     isLoaded,
   };
 }

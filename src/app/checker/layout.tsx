@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { StudentProfileProvider } from "@/context/StudentProfileContext";
 import { DettAdminCircle } from "@/components/shared/DettAdminCircle";
 
 export const metadata: Metadata = {
@@ -14,9 +13,8 @@ export default function CheckerLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <StudentProfileProvider>
-      <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-6 md:px-8 md:py-10">
-        <header className="dett-section-header no-print">
+    <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-6 md:px-8 md:py-10">
+      <header className="dett-section-header no-print">
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="dett-step-tag tracking-[0.35em]">
@@ -40,6 +38,5 @@ export default function CheckerLayout({
         </header>
         {children}
       </div>
-    </StudentProfileProvider>
   );
 }

@@ -10,6 +10,7 @@ import {
   Zap,
 } from "lucide-react";
 import { DettAdminCircle } from "@/components/shared/DettAdminCircle";
+import { WelcomeBackBox } from "@/components/dashboard/WelcomeBackBox";
 import { RequirementTrackerHomeCard } from "@/components/landing/RequirementTrackerHomeCard";
 import {
   ROADMAP_CARD_HEIGHT,
@@ -164,6 +165,8 @@ export function RetroHome() {
             Check My Credits
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </Link>
+
+          <WelcomeBackBox />
         </motion.div>
       </section>
 

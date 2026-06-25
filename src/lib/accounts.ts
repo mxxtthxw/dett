@@ -67,3 +67,39 @@ export function saveAccountProfile(username: string, profile: StudentProfile) {
 export function listAccounts(): AccountRecord[] {
   return readAccounts();
 }
+
+export function loginAccount(
+  username: string,
+  password: string,
+): { ok: boolean; error?: string; profile?: StudentProfile } {
+  const trimmed = username.trim().toLowerCase();
+  if (!trimmed) {
+    return { ok: false, error: "Enter your username." };
+  }
+  if (!password) {
+    return { ok: false, error: "Enter your password." };
+  }
+
+  const account = readAccounts().find((entry) => entry.username === trimmed);
+  if (!account) {
+    return { ok: false, error: "No account found with that username." };
+  }
+  if (account.password !== password) {
+    return { ok: false, error: "Incorrect password." };
+  }
+
+  return {
+    ok: true,
+    profile: {
+      ...account.profile,
+      username: trimmed,
+      accountCreated: true,
+    },
+  };
+}
+
+export function isAuthenticatedProfile(
+  profile: Pick<StudentProfile, "username" | "accountCreated">,
+): boolean {
+  return profile.accountCreated === true && Boolean(profile.username?.trim());
+}
