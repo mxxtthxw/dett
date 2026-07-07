@@ -3,13 +3,19 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { listAccounts, type AccountRecord } from "@/lib/accounts";
+import {
+  listCollegeRequests,
+  type CollegeRequest,
+} from "@/lib/collegeRequests";
 import { DettAdminCircle } from "@/components/shared/DettAdminCircle";
 
 export default function AdminPage() {
   const [accounts, setAccounts] = useState<AccountRecord[]>([]);
+  const [collegeRequests, setCollegeRequests] = useState<CollegeRequest[]>([]);
 
   useEffect(() => {
     setAccounts(listAccounts());
+    setCollegeRequests(listCollegeRequests());
   }, []);
 
   return (
@@ -81,6 +87,58 @@ export default function AdminPage() {
             ))}
           </div>
         )}
+
+        <div className="mt-10">
+          <p className="mb-2 text-xs font-black uppercase tracking-[0.3em] text-[#c0392b]">
+            Community
+          </p>
+          <h2
+            className="mb-4 text-2xl font-black uppercase text-[#1a1a2e]"
+            style={{
+              fontFamily: "Georgia, serif",
+              textShadow: "2px 2px 0px #f5c842",
+            }}
+          >
+            College Requests
+          </h2>
+
+          {collegeRequests.length === 0 ? (
+            <div className="border-4 border-black bg-[#f4f1ea] p-8 text-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+              <p className="text-sm font-bold uppercase tracking-widest text-[#1a1a2e]">
+                No requests yet
+              </p>
+              <p className="mt-2 text-xs text-[#4a4a4a]">
+                Students can suggest schools from the checker via &quot;Don&apos;t
+                see your College?&quot;
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {collegeRequests.map((request) => (
+                <div
+                  key={request.id}
+                  className="border-4 border-black bg-white p-5 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-black uppercase text-[#1a1a2e]">
+                        {request.collegeName}
+                        {request.state ? ` · ${request.state}` : ""}
+                      </p>
+                      <p className="mt-1 text-xs text-[#4a4a4a]">
+                        {request.displayName} ·{" "}
+                        {new Date(request.createdAt).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-[#1a1a2e]">
+                    {request.message}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         <div className="mt-10">
           <Link

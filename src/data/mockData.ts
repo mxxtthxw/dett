@@ -151,6 +151,41 @@ export const PRELOADED_SCHOOLS: School[] = [
     state: "AL",
     is_retro: true,
   },
+  {
+    id: "unc-chapel-hill",
+    name: "University of North Carolina at Chapel Hill",
+    type: "university",
+    state: "NC",
+    is_retro: true,
+  },
+  {
+    id: "florida",
+    name: "University of Florida",
+    type: "university",
+    state: "FL",
+    is_retro: true,
+  },
+  {
+    id: "uab",
+    name: "University of Alabama at Birmingham",
+    type: "university",
+    state: "AL",
+    is_retro: true,
+  },
+  {
+    id: "auburn",
+    name: "Auburn University",
+    type: "university",
+    state: "AL",
+    is_retro: true,
+  },
+  {
+    id: "alabama",
+    name: "The University of Alabama",
+    type: "university",
+    state: "AL",
+    is_retro: true,
+  },
 ];
 
 /** Common institutions where Georgia students take dual enrollment courses. */

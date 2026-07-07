@@ -1,5 +1,5 @@
 import { getCourseOutcomes } from "@/lib/equivalencies";
-import type { DualEnrollmentCourse } from "@/types";
+import type { DualEnrollmentCourse, TransferEquivalency } from "@/types";
 
 export type RequirementCategory =
   | "core"
@@ -117,6 +117,116 @@ export function categorizeCourse(
   return "elective";
 }
 
+function inferCategoryFromEquivalency(
+  equivalency: TransferEquivalency,
+  course: DualEnrollmentCourse,
+  intendedMajor: string,
+): RequirementCategory | null {
+  const code = equivalency.targetCourseCode.toUpperCase();
+  const name = equivalency.targetCourseName.toLowerCase();
+  const hints = majorHints(intendedMajor);
+
+  if (
+    equivalency.status === "elective" ||
+    code.startsWith("ELEC") ||
+    name.includes("elective credit")
+  ) {
+    return "elective";
+  }
+
+  if (
+    /^(ENG|ENGL|WRIT|WRT|ENC|EH|EN)\b/.test(code) ||
+    name.includes("composition") ||
+    name.includes("writing") ||
+    name.includes("expository")
+  ) {
+    return "core";
+  }
+
+  if (
+    /^(HIST|HY|AMH)\b/.test(code) ||
+    name.includes("history") ||
+    name.includes("civilization")
+  ) {
+    return "core";
+  }
+
+  if (
+    /^(POLS|POL|POLI|PSC|POS|GOVT)\b/.test(code) ||
+    name.includes("government")
+  ) {
+    return "core";
+  }
+
+  if (/^(PSYC|PSY|SOCI|SOC)\b/.test(code) || name.includes("psychology")) {
+    return "core";
+  }
+
+  if (
+    /^(COMM|SPCH)\b/.test(code) ||
+    name.includes("speech") ||
+    name.includes("communication")
+  ) {
+    return "core";
+  }
+
+  if (
+    /^(ART|MUS|MUSC|PHIL|AH)\b/.test(code) ||
+    name.includes("appreciation") ||
+    name.includes("philosophy")
+  ) {
+    return "core";
+  }
+
+  if (
+    (/^(MATH|MAT|MAC|MA|MATH)\b/.test(code) || code.startsWith("QTM")) &&
+    !name.includes("calculus") &&
+    (course.id.startsWith("math-11") || course.id === "math-1401")
+  ) {
+    return "core";
+  }
+
+  if (
+    /^(CSCI|CS|COP|COMP|CSC)\b/.test(code) ||
+    course.id.startsWith("csci")
+  ) {
+    return "major";
+  }
+
+  if (
+    /^(BIOL|BIO|BSC|BY)\b/.test(code) ||
+    course.id.startsWith("biol")
+  ) {
+    return hints.health || hints.stem ? "major" : "core";
+  }
+
+  if (/^(CHEM|CH|CHE)\b/.test(code) || course.id.startsWith("chem")) {
+    return hints.health || hints.stem ? "major" : "core";
+  }
+
+  if (/^(PHYS|PHY)\b/.test(code) || course.id.startsWith("phys")) {
+    return "major";
+  }
+
+  if (/^(ACCT|BUS|BUSA|GEB)\b/.test(code)) {
+    return hints.business || course.id.startsWith("acct") ? "major" : "core";
+  }
+
+  if (/^(ECON|EC)\b/.test(code)) {
+    return hints.business ? "major" : "core";
+  }
+
+  if (name.includes("calculus") || CALCULUS_IDS.includes(course.id)) {
+    return "major";
+  }
+
+  if (name.includes("anatomy") || name.includes("physiology")) {
+    return hints.health ? "major" : "core";
+  }
+
+  return null;
+}
+
 export function groupCoursesByRequirement(
   courses: DualEnrollmentCourse[],
   intendedMajor = "",
@@ -138,12 +248,22 @@ export function groupCoursesByRequirement(
         targetSchoolId,
         originSchoolId,
       )[0];
-      const status = outcome.equivalency?.status;
+      const equivalency = outcome.equivalency;
+      const status = equivalency?.status;
 
-      if (!outcome.equivalency || status === "review") {
+      if (!equivalency) {
         category = "elective";
       } else if (status === "elective") {
         category = "elective";
+      } else {
+        const inferred = inferCategoryFromEquivalency(
+          equivalency,
+          course,
+          intendedMajor,
+        );
+        if (inferred) {
+          category = inferred;
+        }
       }
     }
 
@@ -168,8 +288,9 @@ export function countDirectPrerequisites(
 ): number {
   return getCourseOutcomes(courses, targetSchoolId, originSchoolId).filter(
     (outcome) => {
-    const isMajor = categorizeCourse(outcome.course, intendedMajor) === "major";
-    const isDirect = (outcome.equivalency?.status ?? "direct") === "direct";
-    return isMajor && isDirect && outcome.acceptedCredits > 0;
-  }).length;
+      const isMajor = categorizeCourse(outcome.course, intendedMajor) === "major";
+      const isDirect = (outcome.equivalency?.status ?? "direct") === "direct";
+      return isMajor && isDirect && outcome.acceptedCredits > 0;
+    },
+  ).length;
 }
