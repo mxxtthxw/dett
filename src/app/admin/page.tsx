@@ -2,21 +2,38 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Lock } from "lucide-react";
 import { listAccounts, type AccountRecord } from "@/lib/accounts";
 import {
   listCollegeRequests,
   type CollegeRequest,
 } from "@/lib/collegeRequests";
+import { useAdminAuth } from "@/context/AdminAuthContext";
 import { DettAdminCircle } from "@/components/shared/DettAdminCircle";
+import { RetroButton, RetroButtonOutline } from "@/components/checker/RetroButtons";
 
 export default function AdminPage() {
+  const {
+    isAdminAuthenticated,
+    adminUsername,
+    logout,
+    openSignInModal,
+  } = useAdminAuth();
   const [accounts, setAccounts] = useState<AccountRecord[]>([]);
   const [collegeRequests, setCollegeRequests] = useState<CollegeRequest[]>([]);
 
   useEffect(() => {
     setAccounts(listAccounts());
-    setCollegeRequests(listCollegeRequests());
   }, []);
+
+  useEffect(() => {
+    if (!isAdminAuthenticated) {
+      setCollegeRequests([]);
+      return;
+    }
+
+    setCollegeRequests(listCollegeRequests());
+  }, [isAdminAuthenticated]);
 
   return (
     <div className="min-h-screen bg-[#f5f0e8] px-4 py-8 font-mono md:px-8">
@@ -35,8 +52,18 @@ export default function AdminPage() {
             >
               Saved Accounts
             </h1>
+            {isAdminAuthenticated ? (
+              <p className="mt-2 text-xs font-bold uppercase tracking-widest text-[#10b981]">
+                Signed in as {adminUsername}
+              </p>
+            ) : null}
           </div>
-          <DettAdminCircle />
+          <div className="flex items-center gap-3">
+            {isAdminAuthenticated ? (
+              <RetroButtonOutline onClick={logout}>Sign Out</RetroButtonOutline>
+            ) : null}
+            <DettAdminCircle />
+          </div>
         </div>
 
         <div className="mb-6 border-4 border-black bg-white p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
@@ -102,7 +129,25 @@ export default function AdminPage() {
             College Requests
           </h2>
 
-          {collegeRequests.length === 0 ? (
+          {!isAdminAuthenticated ? (
+            <div className="border-4 border-black bg-[#f4f1ea] p-8 text-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center border-4 border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                <Lock className="h-6 w-6 text-[#1a1a2e]" aria-hidden />
+              </div>
+              <p className="text-sm font-bold uppercase tracking-widest text-[#1a1a2e]">
+                Admin sign-in required
+              </p>
+              <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-[#4a4a4a]">
+                Community college requests are only visible to authenticated DETT
+                admins. Use the DETT button in the top right or sign in below.
+              </p>
+              <div className="mt-6">
+                <RetroButton onClick={openSignInModal}>
+                  Admin Sign-In
+                </RetroButton>
+              </div>
+            </div>
+          ) : collegeRequests.length === 0 ? (
             <div className="border-4 border-black bg-[#f4f1ea] p-8 text-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
               <p className="text-sm font-bold uppercase tracking-widest text-[#1a1a2e]">
                 No requests yet
