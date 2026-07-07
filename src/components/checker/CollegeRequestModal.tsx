@@ -162,7 +162,7 @@ export function CollegeRequestModal({ open, onClose }: CollegeRequestModalProps)
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <RetroButton
                 className="flex-1 justify-center"
-                disabled={!collegeName.trim() || message.trim().length < 10}
+                disabled={!collegeName.trim()}
                 onClick={handleSubmit}
               >
                 Submit Request

@@ -39,12 +39,6 @@ export function submitCollegeRequest(input: {
   if (collegeName.length < 2) {
     return { ok: false, error: "Enter a college name." };
   }
-  if (message.length < 10) {
-    return {
-      ok: false,
-      error: "Please share a suggestion or question (at least 10 characters).",
-    };
-  }
 
   const requests = readRequests();
   requests.unshift({
