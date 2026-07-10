@@ -229,9 +229,6 @@ export function WizardShell() {
               >
                 Where Are You Applying?
               </h1>
-              <p className="text-sm tracking-wide text-[#4a4a4a]">
-                Select all the colleges you&apos;re considering.
-              </p>
             </div>
 
             <SchoolSelector
