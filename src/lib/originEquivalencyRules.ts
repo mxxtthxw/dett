@@ -9,6 +9,7 @@ export const PRIORITY_DE_ORIGIN_IDS = new Set([
   "north-georgia",
   "toccoa-falls-college",
   "ga-piedmont-tech",
+  "south-georgia-state",
 ]);
 
 export const PERIMETER_ORIGIN_IDS = new Set([
@@ -37,6 +38,7 @@ export const ORIGIN_TARGET_ARTICULATION: Record<string, string> = {
   "clayton-state": "clayton-state",
   "north-georgia": "north-georgia",
   "toccoa-falls-college": "toccoa-falls-college",
+  "south-georgia-state": "south-georgia-state",
 };
 
 export function shouldUseOriginArticulation(

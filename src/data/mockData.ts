@@ -40,6 +40,13 @@ export const PRELOADED_SCHOOLS: School[] = [
     is_retro: true,
   },
   {
+    id: "south-georgia-state",
+    name: "South Georgia State College",
+    type: "university",
+    state: "GA",
+    is_retro: true,
+  },
+  {
     id: "emory",
     name: "Emory University",
     type: "university",
@@ -200,6 +207,7 @@ export const DE_ORIGIN_SCHOOLS = [
   { id: "ga-piedmont-tech", name: "GA Piedmont Tech" },
   { id: "clayton-state", name: "Clayton State" },
   { id: "gordon-college", name: "Gordon College" },
+  { id: "south-georgia-state", name: "South Georgia State College" },
   { id: "toccoa-falls-college", name: "Toccoa Falls College" },
 ] as const;
 

@@ -72,6 +72,77 @@ const NORTH_GEORGIA_OVERRIDES: Record<string, CourseOverride> = {
   },
 };
 
+/** SGSC catalog course numbers (2024–2025 core curriculum). */
+const SOUTH_GEORGIA_STATE_OVERRIDES: Record<string, CourseOverride> = {
+  "comm-1110": {
+    targetCourseCode: "COMM 1110",
+    targetCourseName: "Public Speaking",
+  },
+  "biol-1107": {
+    targetCourseCode: "BIOL 1010K",
+    targetCourseName: "Introduction to Biology I",
+  },
+  "biol-1108": {
+    targetCourseCode: "BIOL 1020K",
+    targetCourseName: "Introduction to Biology II",
+  },
+  "biol-2111": {
+    targetCourseCode: "BIOL 2107K",
+    targetCourseName: "Anatomy and Physiology I",
+  },
+  "biol-2112": {
+    targetCourseCode: "BIOL 2108K",
+    targetCourseName: "Anatomy and Physiology II",
+  },
+  "chem-1211": {
+    targetCourseCode: "CHEM 1211K",
+    targetCourseName: "Principles of Chemistry I",
+  },
+  "chem-1212": {
+    targetCourseCode: "CHEM 1212K",
+    targetCourseName: "Principles of Chemistry II",
+  },
+  "phys-2211": {
+    targetCourseCode: "PHYS 2211K",
+    targetCourseName: "Principles of Physics I",
+  },
+  "geol-1121": {
+    targetCourseCode: "SCIE 1121",
+    targetCourseName: "Physical Geology",
+    targetCredits: 4,
+  },
+  "hist-2111": {
+    targetCourseCode: "HIST 2111",
+    targetCourseName: "United States History to 1877",
+  },
+  "hist-2112": {
+    targetCourseCode: "HIST 2112",
+    targetCourseName: "United States History since 1877",
+  },
+  "arts-1100": {
+    targetCourseCode: "ARTS 2205",
+    targetCourseName: "Art Appreciation",
+  },
+  "musc-1100": {
+    targetCourseCode: "MUSI 1100",
+    targetCourseName: "Music Appreciation",
+  },
+  "phil-1010": {
+    targetCourseCode: "PHIL 2010",
+    targetCourseName: "Introduction to Philosophy",
+  },
+  "csci-1301": {
+    targetCourseCode: "CSCI 1301",
+    targetCourseName: "Computer Science I",
+    targetCredits: 4,
+  },
+  "csci-1302": {
+    targetCourseCode: "CSCI 1302",
+    targetCourseName: "Computer Science II",
+    targetCredits: 4,
+  },
+};
+
 const GEORGIA_STATE_OVERRIDES: Record<string, CourseOverride> = {
   "comm-1110": {
     targetCourseCode: "COMM 1100",
@@ -149,6 +220,11 @@ export const northGeorgiaEquivalencies = buildUsgSchoolEquivalencies(
   NORTH_GEORGIA_OVERRIDES,
 );
 
+export const southGeorgiaStateEquivalencies = buildUsgSchoolEquivalencies(
+  "south-georgia-state",
+  SOUTH_GEORGIA_STATE_OVERRIDES,
+);
+
 /** Perimeter DE credits articulate to GSU main campus using GSU course numbers. */
 export const georgiaStatePerimeterEquivalencies = buildUsgSchoolEquivalencies(
   "georgia-state",
@@ -169,8 +245,10 @@ export function buildDirectHomeInstitutionEquivalency(
     overrides = CLAYTON_STATE_OVERRIDES;
   } else if (targetSchoolId === "north-georgia") {
     overrides = NORTH_GEORGIA_OVERRIDES;
-  } else   if (targetSchoolId === "georgia-state") {
+  } else if (targetSchoolId === "georgia-state") {
     overrides = GEORGIA_STATE_OVERRIDES;
+  } else if (targetSchoolId === "south-georgia-state") {
+    overrides = SOUTH_GEORGIA_STATE_OVERRIDES;
   } else if (targetSchoolId === "toccoa-falls-college") {
     return buildDirectToccoaFallsEquivalency(sourceCourseId);
   }
