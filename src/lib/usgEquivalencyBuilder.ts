@@ -143,6 +143,50 @@ const SOUTH_GEORGIA_STATE_OVERRIDES: Record<string, CourseOverride> = {
   },
 };
 
+/** AMSC catalog course numbers (2024–2025 IMPACTS core curriculum). */
+const ATLANTA_METRO_STATE_OVERRIDES: Record<string, CourseOverride> = {
+  "comm-1110": {
+    targetCourseCode: "COMM 1110",
+    targetCourseName: "Public Speaking",
+  },
+  "biol-1107": {
+    targetCourseCode: "BIOL 1107K",
+    targetCourseName: "Principles of Biology I",
+  },
+  "biol-1108": {
+    targetCourseCode: "BIOL 1108K",
+    targetCourseName: "Principles of Biology II",
+  },
+  "biol-2111": {
+    targetCourseCode: "BIOL 2241",
+    targetCourseName: "Human Anatomy and Physiology I",
+  },
+  "biol-2112": {
+    targetCourseCode: "BIOL 2242",
+    targetCourseName: "Human Anatomy and Physiology II",
+  },
+  "chem-1211": {
+    targetCourseCode: "CHEM 1211K",
+    targetCourseName: "Principles of Chemistry I",
+  },
+  "chem-1212": {
+    targetCourseCode: "CHEM 1212K",
+    targetCourseName: "Principles of Chemistry II",
+  },
+  "phys-2211": {
+    targetCourseCode: "PHYS 2211K",
+    targetCourseName: "Principles of Physics I",
+  },
+  "hist-2111": {
+    targetCourseCode: "HIST 2111",
+    targetCourseName: "United States History I",
+  },
+  "hist-2112": {
+    targetCourseCode: "HIST 2112",
+    targetCourseName: "United States History II",
+  },
+};
+
 const GEORGIA_STATE_OVERRIDES: Record<string, CourseOverride> = {
   "comm-1110": {
     targetCourseCode: "COMM 1100",
@@ -225,6 +269,11 @@ export const southGeorgiaStateEquivalencies = buildUsgSchoolEquivalencies(
   SOUTH_GEORGIA_STATE_OVERRIDES,
 );
 
+export const atlantaMetroStateEquivalencies = buildUsgSchoolEquivalencies(
+  "atlanta-metro-state",
+  ATLANTA_METRO_STATE_OVERRIDES,
+);
+
 /** Perimeter DE credits articulate to GSU main campus using GSU course numbers. */
 export const georgiaStatePerimeterEquivalencies = buildUsgSchoolEquivalencies(
   "georgia-state",
@@ -249,6 +298,8 @@ export function buildDirectHomeInstitutionEquivalency(
     overrides = GEORGIA_STATE_OVERRIDES;
   } else if (targetSchoolId === "south-georgia-state") {
     overrides = SOUTH_GEORGIA_STATE_OVERRIDES;
+  } else if (targetSchoolId === "atlanta-metro-state") {
+    overrides = ATLANTA_METRO_STATE_OVERRIDES;
   } else if (targetSchoolId === "toccoa-falls-college") {
     return buildDirectToccoaFallsEquivalency(sourceCourseId);
   }

@@ -3,6 +3,7 @@ import {
   claytonStateEquivalencies,
   northGeorgiaEquivalencies,
   southGeorgiaStateEquivalencies,
+  atlantaMetroStateEquivalencies,
 } from "@/lib/usgEquivalencyBuilder";
 import {
   howardEquivalencies,
@@ -1069,6 +1070,7 @@ export const MOCK_EQUIVALENCIES: TransferEquivalency[] = [
   ...claytonStateEquivalencies,
   ...northGeorgiaEquivalencies,
   ...southGeorgiaStateEquivalencies,
+  ...atlantaMetroStateEquivalencies,
   ...howardEquivalencies,
   ...toccoaFallsEquivalencies,
   ...spelmanEquivalencies,

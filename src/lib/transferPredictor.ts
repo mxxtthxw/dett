@@ -28,6 +28,7 @@ const SCHOOL_DIFFICULTY: Record<string, number> = {
   "west-georgia": 0.94,
   "columbus-state": 0.94,
   "south-georgia-state": 0.95,
+  "atlanta-metro-state": 0.95,
   "clark-atlanta": 0.9,
 };
 
