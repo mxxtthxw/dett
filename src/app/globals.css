@@ -235,6 +235,26 @@ body {
   animation: dett-advisor-progress 4.5s ease-in-out infinite alternate;
 }
 
+@keyframes dett-guide-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.dett-guide-bob {
+  animation: dett-guide-bob 2.4s steps(2, end) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dett-guide-bob {
+    animation: none;
+  }
+}
+
 .dett-live-value {
   color: #10b981;
 }

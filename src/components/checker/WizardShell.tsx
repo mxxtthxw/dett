@@ -17,6 +17,7 @@ import { GpaOutlookTab } from "@/components/checker/GpaOutlookTab";
 import { ReportProgressGauge } from "@/components/checker/ReportProgressGauge";
 import { RequirementTracker } from "@/components/checker/RequirementTracker";
 import { PDFReport } from "@/components/checker/PDFReport";
+import { PixelGuide } from "@/components/checker/PixelGuide";
 import { SaveProgressModal } from "@/components/checker/SaveProgressModal";
 import {
   RetroButton,
@@ -131,6 +132,8 @@ export function WizardShell() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
+      <PixelGuide step={step} />
+
       {showSaveModal ? (
         <SaveProgressModal
           onClose={() => setShowSaveModal(false)}
