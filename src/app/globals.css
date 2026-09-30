@@ -235,6 +235,13 @@ body {
   animation: dett-advisor-progress 4.5s ease-in-out infinite alternate;
 }
 
+.dett-grid-paper {
+  background-image:
+    linear-gradient(to right, rgba(26, 26, 46, 0.055) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(26, 26, 46, 0.055) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
 @keyframes dett-guide-bob {
   0%,
   100% {

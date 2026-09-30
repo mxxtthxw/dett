@@ -2,16 +2,13 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import {
-  ArrowRight,
-  Clock,
-  GraduationCap,
-  Star,
-  Zap,
-} from "lucide-react";
+import { ArrowRight, Clock, GraduationCap, Star } from "lucide-react";
+import { PRELOADED_COURSES, PRELOADED_SCHOOLS } from "@/data/mockData";
 import { DettAdminCircle } from "@/components/shared/DettAdminCircle";
 import { WelcomeBackBox } from "@/components/dashboard/WelcomeBackBox";
+import { CatalogExplorer } from "@/components/landing/CatalogExplorer";
 import { RequirementTrackerHomeCard } from "@/components/landing/RequirementTrackerHomeCard";
+import { SectionHeading } from "@/components/landing/SectionHeading";
 import {
   ROADMAP_CARD_HEIGHT,
   ROADMAP_CARD_LIVE,
@@ -90,6 +87,31 @@ const HOW_IT_WORKS = [
   },
 ];
 
+const TRACKED_STATES = new Set(
+  PRELOADED_SCHOOLS.map((school) => school.state).filter(Boolean),
+);
+
+const HERO_STATS = [
+  { value: String(PRELOADED_SCHOOLS.length), label: "Colleges Tracked" },
+  { value: String(PRELOADED_COURSES.length), label: "DE Courses Mapped" },
+  { value: String(TRACKED_STATES.size), label: "States Covered" },
+];
+
+/** Pixel-corner ornaments that frame a block without adding a visible box. */
+function CornerFrame() {
+  const corner =
+    "pointer-events-none absolute h-4 w-4 border-[#1a1a2e]/25";
+
+  return (
+    <>
+      <span aria-hidden className={`${corner} left-0 top-0 border-l-4 border-t-4`} />
+      <span aria-hidden className={`${corner} right-0 top-0 border-r-4 border-t-4`} />
+      <span aria-hidden className={`${corner} bottom-0 left-0 border-b-4 border-l-4`} />
+      <span aria-hidden className={`${corner} bottom-0 right-0 border-b-4 border-r-4`} />
+    </>
+  );
+}
+
 export function RetroHome() {
   return (
     <div className="flex min-h-screen w-full flex-col bg-[#f5f0e8] font-mono">
@@ -119,38 +141,40 @@ export function RetroHome() {
         </div>
       </nav>
 
-      <section className="flex flex-1 flex-col items-center justify-center px-6 pb-16 pt-20 text-center">
+      <section className="dett-grid-paper flex flex-1 flex-col items-center justify-center px-6 pb-20 pt-20 text-center">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="max-w-3xl"
+          className="relative max-w-3xl px-8 py-10"
         >
-          <div className="mb-8 inline-flex items-center gap-2 border-2 border-[#1a1a2e] bg-[#f5c842] px-4 py-1 text-xs font-black uppercase tracking-widest text-[#1a1a2e]">
-            <Zap className="h-3 w-3" />
-            Free · Instant · Built by Students
-          </div>
+          <CornerFrame />
 
-          <div className="mb-6 flex items-center justify-center gap-4">
-            <div className="h-1 w-16 bg-[#1a1a2e]" />
+          <div className="mb-8 flex items-center justify-center gap-4">
+            <div className="h-[3px] w-16 bg-[#1a1a2e]" />
             <GraduationCap className="h-6 w-6 text-[#1a1a2e]" />
-            <div className="h-1 w-16 bg-[#1a1a2e]" />
+            <div className="h-[3px] w-16 bg-[#1a1a2e]" />
           </div>
 
           <h1
-            className="mb-4 text-6xl font-black uppercase leading-none tracking-tight text-[#1a1a2e] md:text-8xl"
+            className="mb-5 text-6xl font-black uppercase leading-none tracking-tight text-[#1a1a2e] md:text-8xl"
             style={{
               fontFamily: "Georgia, serif",
-              textShadow: "5px 5px 0px #f5c842",
+              textShadow: "5px 5px 0px #f5c842, 9px 9px 0px rgba(26, 26, 46, 0.1)",
             }}
           >
             DETT
           </h1>
-          <p className="mb-3 text-sm font-bold uppercase tracking-[0.3em] text-[#c0392b]">
-            Dual Enrollment Transfer Tool
-          </p>
-          <div className="mx-auto mb-8 h-1 max-w-xs bg-[#1a1a2e]" />
-          <p className="mx-auto mb-4 max-w-lg text-sm leading-relaxed text-[#4a4a4a]">
+
+          <div className="mx-auto mb-6 flex max-w-sm items-center gap-3">
+            <span className="h-px flex-1 bg-[#1a1a2e]/30" />
+            <p className="text-[11px] font-bold uppercase tracking-[0.35em] text-[#c0392b]">
+              Dual Enrollment Transfer Tool
+            </p>
+            <span className="h-px flex-1 bg-[#1a1a2e]/30" />
+          </div>
+
+          <p className="mx-auto mb-5 max-w-lg text-sm leading-relaxed text-[#4a4a4a]">
             Find out exactly which dual enrollment credits transfer to your
             target colleges — before you apply.
           </p>
@@ -168,25 +192,54 @@ export function RetroHome() {
 
           <WelcomeBackBox />
         </motion.div>
+
+        <motion.dl
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25, duration: 0.5 }}
+          className="mt-14 grid w-full max-w-2xl grid-cols-3 border-4 border-[#1a1a2e] bg-white shadow-[6px_6px_0px_#1a1a2e]"
+        >
+          {HERO_STATS.map((stat) => (
+            <div
+              key={stat.label}
+              className="border-r-4 border-[#1a1a2e] px-4 py-5 last:border-r-0"
+            >
+              <dt className="sr-only">{stat.label}</dt>
+              <dd>
+                <span
+                  className="block text-3xl font-black leading-none text-[#f5c842] md:text-4xl"
+                  style={{ WebkitTextStroke: "2px #1a1a2e" }}
+                >
+                  {stat.value}
+                </span>
+                <span className="mt-2 block text-[9px] font-black uppercase tracking-[0.2em] text-[#4a4a4a]">
+                  {stat.label}
+                </span>
+              </dd>
+            </div>
+          ))}
+        </motion.dl>
       </section>
 
-      <section className="mx-auto w-full max-w-6xl px-6 pb-16">
-        <div className="mb-8 flex items-center gap-4">
-          <div className="h-1 flex-1 bg-[#1a1a2e]" />
-          <span className="text-xs font-black uppercase tracking-widest text-[#1a1a2e]">
-            How It Works
-          </span>
-          <div className="h-1 flex-1 bg-[#1a1a2e]" />
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+      <section className="mx-auto w-full max-w-6xl px-6 pb-20">
+        <SectionHeading
+          label="Four Steps"
+          title="How It Works"
+          align="center"
+        />
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 md:grid-cols-4">
           {HOW_IT_WORKS.map((item, index) => (
             <motion.div
               key={item.step}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 + index * 0.1 }}
-              className="border-4 border-[#1a1a2e] bg-white p-5 shadow-[4px_4px_0px_#1a1a2e]"
+              className="relative border-4 border-[#1a1a2e] bg-white p-5 shadow-[4px_4px_0px_#1a1a2e] transition-all hover:-translate-y-1 hover:shadow-[6px_8px_0px_#1a1a2e]"
             >
+              <span
+                aria-hidden
+                className="absolute right-0 top-0 h-3 w-3 bg-[#f5c842]"
+              />
               <div
                 className="mb-2 text-3xl font-black text-[#f5c842]"
                 style={{ WebkitTextStroke: "2px #1a1a2e" }}
@@ -202,24 +255,16 @@ export function RetroHome() {
         </div>
       </section>
 
-      <section className="border-t-4 border-[#1a1a2e] bg-[#1a1a2e] px-6 py-16">
+      <CatalogExplorer />
+
+      <section className="border-t-4 border-[#1a1a2e] bg-[#1a1a2e] px-6 py-20">
         <div className="mx-auto max-w-6xl">
-          <div className="mb-3 flex items-center gap-4">
-            <div className="h-1 w-8 bg-[#f5c842]" />
-            <span className="text-xs font-black uppercase tracking-widest text-[#f5c842]">
-              Roadmap
-            </span>
-          </div>
           <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
-            <h2
-              className="text-4xl font-black uppercase text-white"
-              style={{
-                fontFamily: "Georgia, serif",
-                textShadow: "4px 4px 0px #f5c842",
-              }}
-            >
-              Coming Soon
-            </h2>
+            <SectionHeading
+              label="Roadmap"
+              title="Coming Soon"
+              tone="dark"
+            />
             <div className="flex items-center gap-2 border-2 border-[#f5c842]/30 px-4 py-2">
               <Clock className="h-3.5 w-3.5 text-[#f5c842]" />
               <span className="text-xs font-black uppercase tracking-widest text-[#f5c842]">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { PRELOADED_SCHOOLS, getOriginSchoolName } from "@/data/mockData";
@@ -68,6 +68,41 @@ export function WizardShell() {
     selectedSchools[0];
   const activeTrackerSchoolId = trackerSchool?.id ?? selectedSchools[0]?.id ?? "";
   const activeTrackerSchoolName = trackerSchool?.name ?? firstSchool;
+
+  const hasAppliedDeepLink = useRef(false);
+
+  // Landing-page catalog links arrive as /checker?school=<id> with the college
+  // preselected. Runs after the stored profile loads so it isn't overwritten.
+  useEffect(() => {
+    if (!isLoaded || hasAppliedDeepLink.current) {
+      return;
+    }
+
+    hasAppliedDeepLink.current = true;
+
+    const schoolId = new URLSearchParams(window.location.search).get("school");
+
+    if (!schoolId || !PRELOADED_SCHOOLS.some((s) => s.id === schoolId)) {
+      return;
+    }
+
+    setProfile((previous) => {
+      const targetSchoolIds = previous.targetSchoolIds.includes(schoolId)
+        ? previous.targetSchoolIds
+        : [...previous.targetSchoolIds, schoolId];
+
+      return {
+        ...previous,
+        targetSchoolIds,
+        schools: PRELOADED_SCHOOLS.filter((school) =>
+          targetSchoolIds.includes(school.id),
+        ),
+        wizardStep: previous.displayName.trim() ? "schools" : "name",
+      };
+    });
+
+    window.history.replaceState(null, "", "/checker");
+  }, [isLoaded, setProfile]);
 
   const handleSchoolsChange = (targetSchoolIds: string[]) => {
     setProfile((previous) => ({
